@@ -1,0 +1,58 @@
+services:
+  nginx:
+    build:
+      context: ./nginx
+    container_name: ai_text_helper_nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app_network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: ai_text_helper_frontend
+    depends_on:
+      - backend
+    networks:
+      - app_network
+
+  backend:
+    build:
+      context: ./backend
+    container_name: ai_text_helper_backend
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_NAME: text_tasks
+    depends_on:
+      - redis
+    networks:
+      - app_network
+
+  worker:
+    build:
+      context: ./worker
+    container_name: ai_text_helper_worker
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_NAME: text_tasks
+      MODEL_NAME: cointegrated/rut5-small
+    depends_on:
+      - redis
+    networks:
+      - app_network
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: ai_text_helper_redis
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
